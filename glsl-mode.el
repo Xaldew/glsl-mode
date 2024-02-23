@@ -238,14 +238,13 @@ E.g. the function used by calls to 'browse-url', eww, w3m, etc."
       "image2DMSArray" "iimage2DMSArray" "uimage2DMSArray"))
 
   (defvar glsl-qualifier-list
-    '("attribute" "const" "uniform" "varying" "buffer" "shared" "coherent"
-    "volatile" "restrict" "readonly" "writeonly" "layout" "centroid" "flat"
-    "smooth" "noperspective" "patch" "sample" "in" "out" "inout"
-    "invariant" "lowp" "mediump" "highp"))
+    '("attribute" "uniform" "varying" "buffer" "shared" "coherent"
+      "readonly" "writeonly" "centroid" "flat"
+      "smooth" "noperspective" "patch" "sample" "in" "out" "inout"
+      "invariant" "lowp" "mediump" "highp"))
 
   (defvar glsl-keyword-list
-    '("break" "continue" "do" "for" "while" "if" "else" "subroutine"
-      "discard" "return" "precision" "struct" "switch" "default" "case"))
+    '("subroutine" "discard" "precision"))
 
   (defvar glsl-reserved-list
     '("input" "output" "asm" "class" "union" "enum" "typedef" "template" "this"
@@ -321,41 +320,36 @@ E.g. the function used by calls to 'browse-url', eww, w3m, etc."
   (defvar glsl-preprocessor-builtin-list
     '("__LINE__" "__FILE__" "__VERSION__")))
 
-(eval-and-compile
-  (defun glsl-ppre (re)
-    (regexp-opt re 'words)))
-
 (defvar glsl--preprocessor-rx
   (format "^[ \t]*#[ \t]*%s" (regexp-opt glsl-preprocessor-directive-list 'words)))
 
-(defvar glsl--type-rx (glsl-ppre glsl-type-list))
-(defvar glsl--deprecated-keywords-rx (glsl-ppre glsl-deprecated-qualifier-list))
-(defvar glsl--reserved-keywords-rx (glsl-ppre glsl-reserved-list))
-(defvar glsl--keywords-rx (glsl-ppre glsl-keyword-list))
-(defvar glsl--qualifier-rx (glsl-ppre glsl-qualifier-list))
-(defvar glsl--preprocessor-builtin-rx (glsl-ppre glsl-preprocessor-builtin-list))
-(defvar glsl--deprecated-builtin-rx (glsl-ppre glsl-deprecated-builtin-list))
+(defvar glsl--type-rx (regexp-opt glsl-type-list 'words))
+(defvar glsl--deprecated-keywords-rx (regexp-opt glsl-deprecated-qualifier-list 'symbols))
+(defvar glsl--reserved-keywords-rx (regexp-opt glsl-reserved-list 'symbols))
+(defvar glsl--keywords-rx (regexp-opt glsl-keyword-list 'symbol))
+(defvar glsl--qualifier-rx (regexp-opt glsl-qualifier-list 'words))
+(defvar glsl--preprocessor-builtin-rx (regexp-opt glsl-preprocessor-builtin-list 'symbols))
+(defvar glsl--deprecated-builtin-rx (regexp-opt glsl-deprecated-builtin-list 'symbols))
 (defvar glsl--builtin-rx (regexp-opt glsl-builtin-list 'symbols))
-(defvar glsl--deprecated-variables-rx (glsl-ppre glsl-deprecated-variables-list))
+(defvar glsl--deprecated-variables-rx (regexp-opt glsl-deprecated-variables-list 'symbols))
 (defvar glsl--variables-rx "gl_[A-Z][A-Za-z_]+")
 (defvar glsl--extensions-rx "GL_[A-Z]+_[a-zA-Z][a-zA-Z_0-9]+")
 
 
 (defvar glsl-font-lock-keywords-1
-  (append
-   (list
-    (cons glsl--preprocessor-rx glsl-preprocessor-face)
-    (cons glsl--type-rx glsl-type-face)
-    (cons glsl--deprecated-keywords-rx glsl-deprecated-keyword-face)
-    (cons glsl--reserved-keywords-rx glsl-reserved-keyword-face)
-    (cons glsl--qualifier-rx glsl-qualifier-face)
-    (cons glsl--keywords-rx glsl-keyword-face)
-    (cons glsl--preprocessor-builtin-rx glsl-keyword-face)
-    (cons glsl--deprecated-builtin-rx glsl-deprecated-builtin-face)
-    (cons glsl--builtin-rx glsl-builtin-face)
-    (cons glsl--deprecated-variables-rx glsl-deprecated-variable-name-face)
-    (cons glsl--variables-rx glsl-variable-name-face)
-    (cons glsl--extensions-rx glsl-extension-face)))
+  `((,glsl--preprocessor-rx         . glsl-preprocessor-face)
+    ;; (,glsl--type-rx                 . glsl-type-face)
+    (,glsl--deprecated-keywords-rx  . glsl-deprecated-keyword-face)
+    (,glsl--reserved-keywords-rx    . glsl-reserved-keyword-face)
+    ;; (,glsl--qualifier-rx            . glsl-qualifier-face)
+    (,glsl--keywords-rx             . glsl-keyword-face)
+    (,glsl--preprocessor-builtin-rx . glsl-keyword-face)
+    (,glsl--deprecated-builtin-rx   . glsl-deprecated-builtin-face)
+    (,glsl--builtin-rx              . glsl-builtin-face)
+    (,glsl--deprecated-variables-rx . glsl-deprecated-variable-name-face)
+    (,glsl--variables-rx            . glsl-variable-name-face)
+    (,glsl--extensions-rx           . glsl-extension-face)
+    )
   "Highlighting expressions for GLSL mode.")
 
 
@@ -363,12 +357,12 @@ E.g. the function used by calls to 'browse-url', eww, w3m, etc."
   "Default highlighting expressions for GLSL mode.")
 
 (defvar glsl-mode-syntax-table
-  (let ((glsl-mode-syntax-table (make-syntax-table)))
-    (modify-syntax-entry ?/ ". 124b" glsl-mode-syntax-table)
-    (modify-syntax-entry ?* ". 23" glsl-mode-syntax-table)
-    (modify-syntax-entry ?\n "> b" glsl-mode-syntax-table)
-    (modify-syntax-entry ?_ "w" glsl-mode-syntax-table)
-    glsl-mode-syntax-table)
+  (let ((tbl (make-syntax-table c-mode-syntax-table)))
+    ;; (modify-syntax-entry ?/ ". 124b" tbl)
+    ;; (modify-syntax-entry ?* ". 23" tbl)
+    ;; (modify-syntax-entry ?\n "> b" tbl)
+    ;; (modify-syntax-entry ?_ "w" tbl)
+    tbl)
   "Syntax table for glsl-mode.")
 
 (defvar glsl-other-file-alist
@@ -425,20 +419,24 @@ E.g. the function used by calls to 'browse-url', eww, w3m, etc."
   (c-init-language-vars-for 'c-mode)
   (c-common-init 'c-mode)
   (cc-imenu-init cc-imenu-c++-generic-expression)
-  (set (make-local-variable 'font-lock-defaults) '(glsl-font-lock-keywords))
+  ;; (set (make-local-variable 'font-lock-defaults) '(glsl-font-lock-keywords))
   (set (make-local-variable 'ff-other-file-alist) 'glsl-other-file-alist)
   (set (make-local-variable 'comment-start) "// ")
   (set (make-local-variable 'comment-end) "")
   (set (make-local-variable 'comment-padding) "")
+  ;; (set (make-local-variable 'c-noise-macro-with-parens-names) '("layout"))
+  ;; (set (make-local-variable 'c-noise-macro-names) '("uniform"))
   (add-to-list 'align-c++-modes 'glsl-mode)
   (c-run-mode-hooks 'c-mode-common-hook)
   (run-mode-hooks 'glsl-mode-hook)
+  (font-lock-add-keywords nil glsl-font-lock-keywords)
   (let* ((rx-extra '((glsl-additional-types . glsl-type-face)
                      (glsl-additional-keywords . glsl-keyword-face)
                      (glsl-additional-qualifiers . glsl-qualifer-face)
                      (glsl-additional-built-ins . glsl-builtin-face)))
-         (fl-extras (cl-loop for (key . value) in rx-extra when (eval key)
-                             collect (cons (glsl-ppre (eval key)) value))))
+         (fl-extras (cl-loop for (key . value) in rx-extra
+                             when (eval key)
+                             collect (cons (regexp-opt (eval key) 'symbols) value))))
     (font-lock-add-keywords nil fl-extras))
   :after-hook (progn (c-make-noise-macro-regexps)
 		     (c-make-macro-with-semi-re)
