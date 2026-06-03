@@ -280,6 +280,7 @@ the appropriate place for that."
   (append (c-lang-const c-modifier-kwds)
           '("in" "out" "inout" "uniform" "buffer"
             "coherent" "readonly" "writeonly"
+            "lowp" "mediump" "highp"
             "hitAttributeEXT" "rayPayloadEXT" "rayPayloadInEXT")))
 
 (c-lang-defconst c-paren-nontype-kwds
